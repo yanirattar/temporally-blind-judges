@@ -1,0 +1,85 @@
+# Temporally Blind Judges: experiment configuration.
+# Paths are relative to this file. Change a setting, and only the calls it affects are re-run.
+
+paths:
+  raw_dir: data/raw                  # downloaded Physics-IQ videos
+  review_dir: data/review            # scene review page and previews
+  manifest: data/manifest.csv        # one row per Physics-IQ video, with your scene labels
+  conditions_dir: data/conditions    # rendered clips: clean, corrupted, reversed copies
+  conditions_csv: data/conditions.csv
+  store: runs/results.sqlite         # every judge call: answers, tokens, cost (the cache)
+  uploads: runs/uploads.json         # Gemini Files API uploads and their expiry
+  results_dir: results
+
+physiq:
+  base_url: https://storage.googleapis.com/physics-iq-benchmark
+  fps: 30                            # 30 is the native rate; corruptions need it for short freezes and drops
+
+preprocess:
+  width: 768                         # downscale from 4K; the judge sees ~70 tokens per frame regardless
+  crf: 23
+  preset: veryfast
+
+corruptions:
+  seed: 1234
+  motion_threshold: 0.2              # share of peak motion that counts as "moving"
+  reversal: {mild: 0.25, medium: 0.5, strong: 1.0}    # share of the clip played backward
+  shuffle:  {mild: 2, medium: 4, strong: 8}           # number of segments shuffled
+  freeze:   {mild: 0.25, medium: 0.5, strong: 1.0}    # seconds paused
+  drop:     {mild: 0.1, medium: 0.25, strong: 0.5}    # seconds skipped
+
+judge:
+  model: gemini-3.8-flash            # pin one version for the whole project and report it
+  media_resolution: MEDIA_RESOLUTION_LOW   # 70 tokens per video frame on Gemini 3
+  thinking_level: LOW
+  temperature: null                  # null = model default (recommended for Gemini 3)
+  tokens_per_frame: 70               # for cost estimates only
+  output_tokens_guess: 500           # answer + thinking tokens per call, for estimates only
+
+# Judging setups. kind: single (one clip), checklist (one clip, time questions),
+# paired (clip next to its reversed copy). fps = frames per second the judge samples.
+setups:
+  default:   {kind: single,    prompt: default_v1,   fps: 1}
+  dense:     {kind: single,    prompt: default_v1,   fps: 4}
+  checklist: {kind: checklist, prompt: checklist_v1, fps: 1}
+  paired:    {kind: paired,    prompt: paired_v1,    fps: 1}
+
+# Plans: which clips, conditions and setups to run. clips: all, or N spread across scenes.
+plans:
+  pilot:
+    clips: 20
+    conditions: [clean, reversal_strong, freeze_medium, shuffle_medium]
+    setups: [default, dense, checklist, paired]
+  main:
+    clips: all
+    conditions: ["*"]
+    setups: [default]
+  setups:
+    clips: all
+    conditions: [clean, "*_medium", "*_strong"]
+    setups: [dense, checklist, paired]
+  consistency:
+    clips: 30
+    conditions: ["*"]
+    setups: [default]
+    repeat: 1
+  external:
+    clips: all
+    conditions: [external]
+    setups: [default, dense, checklist, paired]
+
+sync:
+  concurrency: 4
+  max_retries: 6
+
+batch:
+  chunk_size: 500                    # requests per batch job
+  min_upload_life_hours: 26          # uploads must outlive a batch job (they expire after ~48 h)
+
+pricing:
+  # USD per 1M tokens for gemini-3.8-flash through 2026-12-31; both double on 2027-01-01.
+  input: 0.75
+  output: 3.75                       # thinking tokens are billed as output
+  batch_discount: 0.5
+
+budget_usd: 60                       # runs stop, and batch submissions are refused, past this total

@@ -1,0 +1,16 @@
+You are an expert judge of physical realism in videos.
+
+Watch the entire video, paying close attention to how things change over time. Answer each question about the whole video:
+
+1. backward_motion: Does any motion or event appear to run backward in time? For example, liquid flowing back into a container, spilled or broken things reassembling, a dropped object rising back to where it was released, or smoke and splashes contracting.
+2. unexplained_pause: Does any moving object or liquid stop abruptly and then continue, without a physical cause?
+3. jump_or_teleport: Does any object suddenly jump to a new position, skipping part of its path, instead of moving continuously?
+4. impossible_order: Do any events happen in an impossible order, such as an effect before its cause?
+
+Then decide whether the video as a whole is physically plausible: consistent with how objects, liquids and materials behave in the real world.
+
+Respond in JSON with these fields:
+- reason: one or two sentences explaining your judgment.
+- backward_motion, unexplained_pause, jump_or_teleport, impossible_order: true or false.
+- plausibility_score: 1 = clearly violates real-world physics, 2 = probably violates, 3 = unsure, 4 = probably plausible, 5 = fully plausible.
+- verdict: "plausible" or "implausible".

@@ -1,0 +1,10 @@
+You are an expert judge of physical realism in videos.
+
+You were shown two videos, Video A and Video B. They show the same scene: one of them is the other played in reverse.
+
+Decide which video shows events in a physically plausible way, with time running forward as it does in the real world. If neither video looks physically plausible, answer "neither".
+
+Respond in JSON with these fields:
+- reason: one or two sentences explaining your choice.
+- plausible_video: "A", "B" or "neither".
+- confidence: 1 = guessing, 5 = certain.

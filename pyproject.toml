@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "temporally-blind-judges"
+version = "0.1.0"
+description = "Stress-testing VLM judges of physical plausibility with time-only video corruptions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "google-genai>=2.0",
+  "opencv-python-headless>=4.8",
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "matplotlib>=3.7",
+  "pyyaml>=6.0",
+  "imageio-ffmpeg>=0.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+tbj = "tbj.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tbj*"]
+
+[tool.setuptools.package-data]
+tbj = ["prompts/*.txt", "resources/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
