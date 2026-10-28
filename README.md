@@ -112,7 +112,7 @@ A useful property: the clean clip played backward is, frame for frame, the stron
 | `checklist` | checklist | `checklist_v1` | 1 | Explicit yes/no questions: backward motion, pauses, jumps, impossible order |
 | `paired` | paired | `paired_v1` | 1 | The clip and its reversed copy, in random order: which one runs forward? |
 
-Each setup changes one thing relative to `default`, so differences can be attributed. Answers are JSON constrained by a schema (`tbj/judge.py`), with the one-line reason first. All calls use low media resolution (about 70 tokens per frame on Gemini 3), low thinking, the model's default temperature and no audio.
+Each setup changes one thing relative to `default`, so differences can be attributed. Answers are JSON constrained by a schema (`tbj/judge.py`), with the one-line reason first. All calls use static frame extraction (frames at exactly the setup's rate, all placed in context, rather than Gemini's opt-in agentic mode that chooses what to watch), low media resolution (about 70 tokens per frame on Gemini 3), low thinking, the model's default temperature and no audio.
 
 **Flag** (clip judged implausible): verdict "implausible" for single and checklist setups; for paired, preferring the reversed copy or rejecting both. **Score** (for AUROC): (5 − plausibility score) / 4, or a confidence-weighted equivalent for paired. The checklist also gets a looser variant, `checklist_any`: flagged if any question is answered yes.
 

@@ -6,7 +6,7 @@ from tbj.judge import (SCHEMAS, Job, ParseError, build_request, cost_usd, job_ke
                        parse_answer, usage_from)
 
 SETTINGS = {"model": "gemini-3.8-flash", "media_resolution": "MEDIA_RESOLUTION_LOW",
-            "thinking_level": "LOW", "temperature": None}
+            "media_processing": "STATIC", "thinking_level": "LOW", "temperature": None}
 COND = {"sha256": "a" * 64, "rev_sha256": "b" * 64}
 SINGLE = {"kind": "single", "prompt": "default_v1", "fps": 1}
 DENSE = {"kind": "single", "prompt": "default_v1", "fps": 4}
@@ -27,6 +27,7 @@ def test_single_request_puts_video_before_text():
     parts = req["contents"][0]["parts"]
     assert parts[0]["file_data"] == {"file_uri": "uri-x", "mime_type": "video/mp4"}
     assert parts[0]["video_metadata"] == {"fps": 1}
+    assert parts[0]["media_processing"] == "STATIC"
     assert "text" in parts[1]
     cfg = req["config"]
     assert cfg["media_resolution"] == "MEDIA_RESOLUTION_LOW"

@@ -31,6 +31,7 @@ corruptions:
 judge:
   model: gemini-3.8-flash            # pin one version for the whole project and report it
   media_resolution: MEDIA_RESOLUTION_LOW   # 70 tokens per video frame on Gemini 3
+  media_processing: STATIC           # fixed-rate frames, all in context (AGENTIC lets the model choose what to watch)
   thinking_level: LOW
   temperature: null                  # null = model default (recommended for Gemini 3)
   tokens_per_frame: 70               # for cost estimates only

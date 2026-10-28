@@ -91,6 +91,7 @@ def judge_settings(cfg) -> dict:
     return {
         "model": j["model"],
         "media_resolution": j.get("media_resolution"),
+        "media_processing": j.get("media_processing"),
         "thinking_level": j.get("thinking_level"),
         "temperature": j.get("temperature"),
     }
@@ -116,25 +117,31 @@ def pair_order(job: Job) -> str:
     return "A" if rng_for(0, job.condition_id, job.setup, job.repeat).random() < 0.5 else "B"
 
 
-def _video_part(uri: str, fps: float) -> dict:
-    return {"file_data": {"file_uri": uri, "mime_type": "video/mp4"}, "video_metadata": {"fps": fps}}
+def _video_part(uri: str, fps: float, processing: str | None) -> dict:
+    """A video part. STATIC processing extracts frames at exactly `fps` and puts them all
+    in context; without it the model may choose its own (agentic) way of watching."""
+    part = {"file_data": {"file_uri": uri, "mime_type": "video/mp4"}, "video_metadata": {"fps": fps}}
+    if processing:
+        part["media_processing"] = processing
+    return part
 
 
 def build_request(job: Job, setup_cfg: dict, prompt: Prompt, settings: dict,
                   clip_uri: str, rev_uri: str | None = None) -> tuple[dict, dict]:
     """Returns (request, meta). `request` has keys model, contents, config."""
     kind, fps = setup_cfg["kind"], setup_cfg["fps"]
+    processing = settings.get("media_processing")
     meta = {"kind": kind, "prompt": prompt.name, "prompt_hash": prompt.hash, "fps": fps}
     if kind == "paired":
         if rev_uri is None:
             raise ValueError("paired setup needs the reversed clip")
         slot = pair_order(job)
         a, b = (clip_uri, rev_uri) if slot == "A" else (rev_uri, clip_uri)
-        parts = [{"text": "Video A:"}, _video_part(a, fps), {"text": "Video B:"}, _video_part(b, fps),
-                 {"text": prompt.text}]
+        parts = [{"text": "Video A:"}, _video_part(a, fps, processing),
+                 {"text": "Video B:"}, _video_part(b, fps, processing), {"text": prompt.text}]
         meta["clip_slot"] = slot
     else:
-        parts = [_video_part(clip_uri, fps), {"text": prompt.text}]
+        parts = [_video_part(clip_uri, fps, processing), {"text": prompt.text}]
     config = {"response_mime_type": "application/json", "response_json_schema": SCHEMAS[kind]}
     if settings.get("media_resolution"):
         config["media_resolution"] = settings["media_resolution"]
