@@ -4,7 +4,7 @@ hypotheses for the experiment's results:
   Hypothesis is wrong if reversals are caught about as often as shuffles.
 
 • H2: denser sampling helps short corruptions (freezes, drops) more than reversals. 
-  Hypothesis is wrong if reversals gain as much or more.
+  Hypothesis is wrong if reversals gain as much or more or denser sampling didn't help.
 
 • H3: The checklist raises detection, but false alarms on clean clips rise too, because the
   model becomes stricter. At 1 frame/s, normal motion between sparse frames may look like a
