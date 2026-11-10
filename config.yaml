@@ -44,6 +44,7 @@ setups:
   dense:     {kind: single,    prompt: default_v1,   fps: 4}
   checklist: {kind: checklist, prompt: checklist_v1, fps: 1}
   paired:    {kind: paired,    prompt: paired_v1,    fps: 1}
+  checklist_dense: {kind: checklist, prompt: checklist_v1, fps: 4}   # H3: are checklist false alarms caused by sparse sampling?
 
 # Plans: which clips, conditions and setups to run. clips: all, or N spread across scenes.
 plans:
@@ -64,13 +65,17 @@ plans:
     conditions: ["*"]
     setups: [default]
     repeat: 1
+  checklist_dense:
+    clips: all
+    conditions: [clean]
+    setups: [checklist_dense]
   external:
     clips: all
     conditions: [external]
     setups: [default, dense, checklist, paired]
 
 sync:
-  concurrency: 4
+  concurrency: 1                     # 1 on the free tier; raise to 4 once billing is on
   max_retries: 6
 
 batch:
@@ -83,4 +88,4 @@ pricing:
   output: 3.75                       # thinking tokens are billed as output
   batch_discount: 0.5
 
-budget_usd: 60                       # runs stop, and batch submissions are refused, past this total
+budget_usd: 25                       # runs stop, and batch submissions are refused, past this total

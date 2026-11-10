@@ -163,7 +163,9 @@ def raw_path(cfg: Config, row: dict) -> Path:
 
 def remote_url(cfg: Config, row: dict) -> str:
     p = cfg["physiq"]
-    return f"{p['base_url'].rstrip('/')}/full-videos/take-{row['take']}/{p['fps']}FPS/{row['filename']}"
+    vid, rest = row["filename"].split("_", 1)
+    name = f"{vid}_full-videos_{p['fps']}FPS_{rest}"
+    return f"{p['base_url'].rstrip('/')}/full-videos/take-{row['take']}/{p['fps']}FPS/{name}"
 
 
 def _download_one(url: str, dest: Path, retries: int = 4) -> int:

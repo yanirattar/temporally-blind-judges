@@ -22,11 +22,12 @@ import pandas as pd
 
 from .config import Config
 from .corrupt import CORRUPTIONS, STRENGTHS
-from .judge import load_prompt
+from .judge import CHECKLIST_ITEMS, load_prompt
 
-SETUP_ORDER = ["default", "dense", "checklist", "checklist_any", "paired"]
+SETUP_ORDER = ["default", "dense", "checklist", "checklist_any", "checklist_dense", "paired"]
 SETUP_LABELS = {"default": "Default", "dense": "Dense sampling", "checklist": "Time checklist",
-                "checklist_any": "Checklist (any item)", "paired": "Paired with reverse"}
+                "checklist_any": "Checklist (any item)", "checklist_dense": "Checklist, 4 frames/s",
+                "paired": "Paired with reverse"}
 # Categorical slots 1-4 of the reference palette (light mode), fixed per setup.
 SETUP_COLORS = {"default": "#2a78d6", "dense": "#eb6834", "checklist": "#1baf7a", "paired": "#eda100"}
 
@@ -349,6 +350,39 @@ def summary_markdown(cfg: Config, df: pd.DataFrame, m: pd.DataFrame, comp: pd.Da
     return "\n".join(lines)
 
 
+def checklist_answers(df: pd.DataFrame) -> pd.DataFrame:
+    """For checklist setups: how often each time question is answered yes, on clean and corrupted clips."""
+    d = df[(df["repeat"] == 0) & (df["kind"] == "checklist") & (df["corruption"] != "external")]
+    if d.empty:
+        return pd.DataFrame()
+    d = d.assign(clips=np.where(d["corruption"] == "clean", "clean", "corrupted"))
+    answers = d["answer"].map(json.loads)
+    for item in CHECKLIST_ITEMS:
+        d[item] = answers.map(lambda a, item=item: bool(a.get(item)))
+    rows = []
+    for (setup, clips), g in d.groupby(["setup", "clips"]):
+        flagged = g[g["flag"] == 1]
+        rows.append({"setup": setup, "clips": clips, "n": len(g), "flagged": g["flag"].mean(),
+                     **{item: g[item].mean() for item in CHECKLIST_ITEMS},
+                     "jump_among_flagged": flagged["jump_or_teleport"].mean() if len(flagged) else np.nan})
+    return pd.DataFrame(rows)
+
+
+def checklist_markdown(chk: pd.DataFrame) -> str:
+    if chk.empty:
+        return ""
+    lines = ["## Checklist answers", "",
+             "Share of clips where each time question was answered yes. On clean clips, Flagged is the "
+             "false-alarm rate; Jump among flagged is the share of flagged clips whose answers included a jump.", "",
+             "| Setup | Clips | n | Flagged | Backward | Pause | Jump | Order | Jump among flagged |",
+             "|---|---|---|---|---|---|---|---|---|"]
+    for _, r in chk.iterrows():
+        lines.append(f"| {SETUP_LABELS.get(r['setup'], r['setup'])} | {r['clips']} | {r['n']} | {_pct(r['flagged'])} | "
+                     f"{_pct(r['backward_motion'])} | {_pct(r['unexplained_pause'])} | {_pct(r['jump_or_teleport'])} | "
+                     f"{_pct(r['impossible_order'])} | {_pct(r['jump_among_flagged'])} |")
+    return "\n".join(lines) + "\n"
+
+
 def run_analysis(cfg: Config, calls: pd.DataFrame, cond: pd.DataFrame, total_spent: float) -> Path:
     out = cfg.path("results_dir")
     out.mkdir(parents=True, exist_ok=True)
@@ -361,11 +395,13 @@ def run_analysis(cfg: Config, calls: pd.DataFrame, cond: pd.DataFrame, total_spe
     ext = external_agreement(df)
     cost = costs(calls)
     reasons = stated_reasons(df)
+    chk = checklist_answers(df)
     for name, table in [("metrics", m), ("comparisons", comp), ("consistency", cons),
-                        ("external", ext), ("costs", cost), ("reasons", reasons)]:
+                        ("external", ext), ("costs", cost), ("reasons", reasons), ("checklist", chk)]:
         if not table.empty:
             table.to_csv(out / f"{name}.csv", index=False)
     df.drop(columns=["raw_text"], errors="ignore").to_csv(out / "answers.csv", index=False)
     figure(m, out / "detection.png")
-    (out / "summary.md").write_text(summary_markdown(cfg, df, m, comp, cons, ext, cost, reasons, total_spent))
+    (out / "summary.md").write_text(summary_markdown(cfg, df, m, comp, cons, ext, cost, reasons, total_spent)
+                                    + "\n" + checklist_markdown(chk))
     return out

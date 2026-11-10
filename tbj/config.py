@@ -40,4 +40,10 @@ def load_config(path: str | os.PathLike | None = None) -> Config:
         raise SystemExit(f"Config file not found: {path}. Run commands from the repo folder or pass --config.")
     with open(path) as f:
         data = yaml.safe_load(f)
+    env = path.parent / ".env"  # e.g. GEMINI_API_KEY, kept out of git
+    if env.exists():
+        for line in env.read_text().splitlines():
+            key, sep, value = line.strip().partition("=")
+            if sep and not key.startswith("#"):
+                os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
     return Config(data, path.parent)
