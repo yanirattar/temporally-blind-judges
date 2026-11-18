@@ -101,4 +101,4 @@ pricing:
   output: 3.75                       # thinking tokens are billed as output
   batch_discount: 0.5
 
-budget_usd: 20                       # runs stop, and batch submissions are refused, past this total
+budget_usd: 16                       # runs stop, and batch submissions are refused, past this total
