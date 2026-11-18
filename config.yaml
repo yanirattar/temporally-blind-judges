@@ -38,8 +38,8 @@ judge:
   media_processing: STATIC           # fixed-rate frames, all in context (AGENTIC lets the model choose what to watch)
   thinking_level: LOW
   temperature: null                  # null = model default (recommended for Gemini 3)
-  tokens_per_frame: 70               # for cost estimates only
-  output_tokens_guess: 500           # answer + thinking tokens per call, for estimates only
+  tokens_per_frame: 66               # for cost estimates only
+  output_tokens_guess: 450           # answer + thinking tokens per call, for estimates only
 
 # Judging setups. kind: single (one clip), checklist (one clip, time questions),
 # paired (clip next to its reversed copy). fps = frames per second the judge samples.
@@ -79,7 +79,7 @@ plans:
     setups: [default, dense, checklist, paired]
 
 sync:
-  concurrency: 1                     # 1 on the free tier; raise to 4 once billing is on
+  concurrency: 4                    # 1 on the free tier; raise to 4 once billing is on
   max_retries: 6
 
 batch:
@@ -92,4 +92,4 @@ pricing:
   output: 3.75                       # thinking tokens are billed as output
   batch_discount: 0.5
 
-budget_usd: 25                       # runs stop, and batch submissions are refused, past this total
+budget_usd: 16                       # runs stop, and batch submissions are refused, past this total

@@ -278,3 +278,8 @@ close to it is inconclusive (not a reason to label more).
 
 ## Runs
 
+- **2026-11-18, smoke test:** failed on the free tier (gemini-3.8-flash allows 20 requests a day there; retries after 503 “high demand” errors used them up). Switched to prepaid billing.
+
+- **2026-11-18, pilot:** 320 calls (20 clips × clean, reversal_strong, freeze_medium, shuffle_medium × 4 setups), live, 320 ok, no parse errors, $0.78. Input per call 730 / 2,314 / 821 / 1,189 tokens (default / dense / checklist / paired; 66 tokens per frame, so dense gets 32 frames vs 8). Output + thinking 274 / 326 / 321 / 651 on average. Paired put the real clip in A 39 times, B 35, and answered “neither” 6 times. Plausibility scores are almost all-or-nothing (1: 153, 2: 3, 5: 84), so AUROC will add little beyond detection and false alarms. No prompt changes. Frozen from here: model, prompts, frame rates, thinking level, resolution. Projected batch cost about $11.
+
+
