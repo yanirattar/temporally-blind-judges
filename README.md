@@ -36,7 +36,7 @@ For real runs you need a Gemini API key from [Google AI Studio](https://aistudio
 export GEMINI_API_KEY=...   # Windows PowerShell: $env:GEMINI_API_KEY="..."
 ```
 
-Set a budget alert in Google Cloud billing on day one. `config.yaml` also has a hard `budget_usd` (default $60): sync runs stop and batch submissions are refused past it.
+Set a budget alert in Google Cloud billing on day one. `config.yaml` also has a hard `budget_usd` (default $25): sync runs stop and batch submissions are refused past it.
 
 ffmpeg is needed to encode clips. If it isn't on your PATH, the bundled `imageio-ffmpeg` binary is used.
 
@@ -56,6 +56,8 @@ Run every command from the repo folder.
 | 6 | `tbj download --set selected` | All 6 videos of each irreversible scene | unattended |
 | 7 | `tbj build` | 13 conditions + reversed copies per clip, downscaled to 768 px | ~1 h, unattended |
 | 8 | `tbj check` | `data/conditions/check.html`: clean vs corrupted side by side | 30 min to look |
+| 8b | `tbj spots` | Screen for clips whose motion detection caught a side event (e.g. a reflection); lists clips to look at | ~5 min |
+| 8c | `tbj check --visibility` | 32 freezes, drops and partial reversals to label visible / subtle / invisible in the page; download the CSV to `labels/visibility.csv` | ~45 min to label |
 | 9 | `tbj plan pilot` then `tbj run pilot` | 20 clips × 4 conditions × 4 setups, about 320 calls | ~1 h |
 | 10 | `tbj batch submit main` and `tbj batch submit setups` | The full run at half price | 5 min, results within 24 h |
 | 11 | `tbj batch collect` | Stores the answers (run `tbj batch status` to check first) | 1 min |
@@ -127,6 +129,11 @@ Each setup changes one thing relative to `default`, so differences can be attrib
 
 `tbj analyze` reports, per setup and condition: detection rate, false-alarm rate on clean clips, balanced accuracy and AUROC, each with a 95% confidence interval from a **cluster bootstrap over scenes**. Clips of one scene are correlated, so whole scenes are resampled. It also reports each setup minus `default` on the same clips, agreement and Cohen's kappa between repeated runs, how often a flagged clip's stated reason is a time problem, and cost per setup.
 
+Two planned analyses are written into the code before any judge call:
+- **H5:** the gain from dense sampling on clips whose detected motion lasts under 1 s vs 1 s or more (medium and strong corruptions), and the difference between the two gains.
+- **H6:** detection of the ¼ and ½ reversals against the full reversal, on the same clips, at default and dense settings. Partial reversals jump at both edges; the full reversal has no jumps, only direction.
+- **Visibility (control):** a corruption on a near-still moment can be physically impossible yet invisible, and counts as a miss. `tbj check --visibility` shows a random sample of 32 freezes, drops and partial reversals to label by eye; `tbj analyze` reports the share labelled invisible per corruption with a 95% interval. Invisible corruptions can lower a detection rate by at most their share, so a gap larger than that bound cannot be explained by them. (An automatic pixel-based measure was tried first and dropped: it failed checks against the eye in both directions; `tbj spots` keeps it only as a screen for clips whose motion detection caught a side event.)
+
 ### Validation on generated videos (question 4)
 
 Put labelled videos (for example from ImplausiBench or FinePhyEval, if their licences allow) in a CSV with columns `path,label[,id]`, where `label` is `plausible` or `implausible`. Then:
@@ -155,6 +162,7 @@ tbj/
   store.py           SQLite store of every call and batch job
   plan.py            plans -> jobs
   runner.py          sync runner and Batch API runner
+  spots.py           screen for clips whose motion detection caught a side event
   analyze.py         metrics, bootstrap CIs, figure, summary
   fake.py            fake Gemini client for the demo and tests
   synthetic.py       synthetic clips for the demo and tests

@@ -46,8 +46,11 @@ def load_results(cfg: Config, calls: pd.DataFrame, cond: pd.DataFrame) -> pd.Dat
                        and (r["prompt_hash"], float(r["fps"])) == current[r["setup"]]
                        and r["model"] == cfg["judge"]["model"], axis=1)
     calls = calls[keep]
+    cond = cond.assign(motion_s=(pd.to_numeric(cond["motion_end"], errors="coerce")
+                                 - pd.to_numeric(cond["motion_start"], errors="coerce"))
+                       / pd.to_numeric(cond["fps"], errors="coerce"))
     cols = ["condition_id", "video_id", "scenario", "category", "perspective", "take", "condition",
-            "corruption", "strength", "sha256", "human_label", "motion_overlap"]
+            "corruption", "strength", "sha256", "human_label", "motion_overlap", "motion_s"]
     df = calls.merge(cond[cols], on="condition_id", how="inner")
     df = df[df["clip_sha"] == df["sha256"]].copy()
     df["flag"] = df["flag"].astype(int)
@@ -161,6 +164,106 @@ def comparisons(df: pd.DataFrame, baseline: str = "default", b: int = 2000, seed
             lo, hi = _ci(bo - ba)
             rows.append({"setup": setup, "measure": label, "n": len(o), "baseline": pa, "setup_rate": po,
                          "diff": po - pa, "diff_lo": lo, "diff_hi": hi})
+    return pd.DataFrame(rows)
+
+
+SHORT_MOTION_S = 1.0  # H5: at 1 frame/s, an action shorter than this is seen in at most one frame
+
+
+def reversal_jumps(df: pd.DataFrame, b: int = 2000, seed: int = 5) -> pd.DataFrame:
+    """H6: are partial reversals (with two jumps at their edges) caught more often than the full
+    reversal (no jumps, only direction)? Per setup, on clips that have the full reversal and the
+    partial one; differences use the same scene resamples, so they are paired."""
+    d = df[(df["repeat"] == 0) & (df["corruption"] == "reversal") & df["setup"].isin(["default", "dense"])]
+    scenes = sorted(df["scenario"].unique())
+    w = _weights(scenes, b, seed)
+    rows = []
+    for setup in [s_ for s_ in ("default", "dense") if s_ in set(d["setup"])]:
+        x = d[d["setup"] == setup]
+        full = x[x["strength"] == "strong"]
+        if full.empty:
+            continue
+        row = {"setup": setup}
+        for part in ("mild", "medium"):
+            p_ = x[x["strength"] == part]
+            both = set(p_["video_id"]) & set(full["video_id"])
+            if not both:
+                row.update({f"{part}_n": 0, part: np.nan, f"{part}_full": np.nan, f"{part}_diff": np.nan,
+                            f"{part}_lo": np.nan, f"{part}_hi": np.nan})
+                continue
+            pp, bp = _rate(p_[p_["video_id"].isin(both)], scenes, w)
+            pf, bf = _rate(full[full["video_id"].isin(both)], scenes, w)
+            lo, hi = _ci(bp - bf)
+            row.update({f"{part}_n": len(both), part: pp, f"{part}_full": pf, f"{part}_diff": pp - pf,
+                        f"{part}_lo": lo, f"{part}_hi": hi})
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def short_action_gain(df: pd.DataFrame, b: int = 2000, seed: int = 2) -> pd.DataFrame:
+    """H5: gain from dense sampling (dense - default) on clips whose detected motion lasts under
+    1 s vs 1 s or more, medium and strong corruptions, on conditions run in both setups.
+    The difference in gain (short - long) uses the same scene resamples for both groups."""
+    df = df[(df["repeat"] == 0) & (~df["corruption"].isin(["clean", "external"]))
+            & (df["strength"].isin(["medium", "strong"]))]
+    if not {"default", "dense"} <= set(df["setup"]) or "motion_s" not in df:
+        return pd.DataFrame()
+    base, dense = df[df["setup"] == "default"], df[df["setup"] == "dense"]
+    common = set(base["condition_id"]) & set(dense["condition_id"])
+    base, dense = base[base["condition_id"].isin(common)], dense[dense["condition_id"].isin(common)]
+    scenes = sorted(df["scenario"].unique())
+    w = _weights(scenes, b, seed)
+    rows = []
+    for c in ["all", *CORRUPTIONS]:
+        row = {"corruption": c}
+        gains = {}
+        for group, select in [("short", lambda x: x["motion_s"] < SHORT_MOTION_S),
+                              ("long", lambda x: x["motion_s"] >= SHORT_MOTION_S)]:
+            a = base[select(base) & ((base["corruption"] == c) if c != "all" else True)]
+            o = dense[select(dense) & ((dense["corruption"] == c) if c != "all" else True)]
+            pa, ba = _rate(a, scenes, w)
+            po, bo = _rate(o, scenes, w)
+            gains[group] = (po - pa, bo - ba)
+            lo, hi = _ci(bo - ba)
+            row.update({f"{group}_n": len(o), f"{group}_clips": o["video_id"].nunique(), f"{group}_default": pa,
+                        f"{group}_dense": po, f"{group}_gain": po - pa, f"{group}_lo": lo, f"{group}_hi": hi})
+        lo, hi = _ci(gains["short"][1] - gains["long"][1])
+        row.update({"diff": gains["short"][0] - gains["long"][0], "diff_lo": lo, "diff_hi": hi})
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    if n == 0:
+        return (np.nan, np.nan)
+    p = k / n
+    mid = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return (max(0.0, mid - half), min(1.0, mid + half))
+
+
+def visibility(labels: pd.DataFrame) -> pd.DataFrame:
+    """Human labels on a random sample of freezes, drops and partial reversals (tbj check --visibility):
+    share visible, subtle and invisible per corruption, with a 95% Wilson interval on the invisible
+    share. Invisible corruptions can lower a detection rate by at most their share, so the upper end
+    of that interval bounds how much of a gap they could explain."""
+    if labels.empty:
+        return pd.DataFrame()
+    d = labels.assign(label=labels["label"].fillna("").astype(str).str.strip().str.lower())
+    d = d[d["label"].isin(["visible", "subtle", "invisible"])]
+    if d.empty:
+        return pd.DataFrame()
+    d = d.assign(corruption=d["condition"].map(lambda c: "partial reversal" if c.startswith("reversal") else c.split("_")[0]))
+    rows = []
+    for c in ["freeze", "drop", "partial reversal"]:
+        g = d[d["corruption"] == c]
+        if g.empty:
+            continue
+        k = int((g["label"] == "invisible").sum())
+        lo, hi = _wilson(k, len(g))
+        rows.append({"corruption": c, "n": len(g), "visible": float((g["label"] == "visible").mean()),
+                     "subtle": float((g["label"] == "subtle").mean()), "invisible": k / len(g),
+                     "invisible_lo": lo, "invisible_hi": hi})
     return pd.DataFrame(rows)
 
 
@@ -383,6 +486,64 @@ def checklist_markdown(chk: pd.DataFrame) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _gain(r, g) -> str:
+    if not np.isfinite(r[f"{g}_gain"]):
+        return "–"
+    return (f"{_pct(r[f'{g}_default'])} → {_pct(r[f'{g}_dense'])}: {100 * r[f'{g}_gain']:+.0f} pts "
+            f"[{100 * r[f'{g}_lo']:+.0f}, {100 * r[f'{g}_hi']:+.0f}]")
+
+
+def reversal_jumps_markdown(rj: pd.DataFrame) -> str:
+    if rj.empty:
+        return ""
+    lines = ["## H6: are partial reversals caught more often than the full reversal?", "",
+             "A partial reversal (¼ or ½ of the clip) plays a stretch backward and jumps at both edges; the full "
+             "reversal has no jumps, only direction. A judge that understood direction would catch the full reversal "
+             "most; H6 predicts the partial ones are caught more (positive differences). Same clips in each comparison.", "",
+             "| Setup | ¼ reversal vs full | ½ reversal vs full |", "|---|---|---|"]
+    def cell(r, part):
+        if not np.isfinite(r[f"{part}_diff"]):
+            return "–"
+        return (f"{_pct(r[part])} vs {_pct(r[f'{part}_full'])}: {100 * r[f'{part}_diff']:+.0f} pts "
+                f"[{100 * r[f'{part}_lo']:+.0f}, {100 * r[f'{part}_hi']:+.0f}] (n={r[f'{part}_n']})")
+    for _, r in rj.iterrows():
+        lines.append(f"| {SETUP_LABELS[r['setup']]} | {cell(r, 'mild')} | {cell(r, 'medium')} |")
+    return "\n".join(lines) + "\n"
+
+
+def short_action_markdown(h5: pd.DataFrame) -> str:
+    if h5.empty:
+        return ""
+    r0 = h5.iloc[0]
+    lines = ["## H5: does dense sampling help more when the action is short?", "",
+             f"Clips split by how long the detected motion lasts in the clean clip: under {SHORT_MOTION_S:g} s "
+             f"({r0['short_clips']} clips) vs {SHORT_MOTION_S:g} s or more ({r0['long_clips']} clips). Medium and strong "
+             "corruptions run in both setups. Default → dense detection, and the gain in percentage points (95% CI). "
+             "H5 predicts a positive difference.", "",
+             "| Corruptions | Short action (n) | Short: default → dense | Long action (n) | Long: default → dense | Difference in gain (short − long) |",
+             "|---|---|---|---|---|---|"]
+    for _, r in h5.iterrows():
+        diff = "–" if not np.isfinite(r["diff"]) else f"{100 * r['diff']:+.0f} pts [{100 * r['diff_lo']:+.0f}, {100 * r['diff_hi']:+.0f}]"
+        lines.append(f"| {'All' if r['corruption'] == 'all' else r['corruption'].capitalize()} | {r['short_n']} | "
+                     f"{_gain(r, 'short')} | {r['long_n']} | {_gain(r, 'long')} | {diff} |")
+    return "\n".join(lines) + "\n"
+
+
+def visibility_markdown(vis: pd.DataFrame) -> str:
+    if vis.empty:
+        return ""
+    lines = ["## How many corruptions can a person see? (hand-labelled sample)", "",
+             "A random sample of freezes, drops and partial reversals, each labelled by eye (`tbj check --visibility`): "
+             "visible at normal speed, subtle (only at the stated time) or invisible (not even frame by frame). "
+             "Invisible corruptions can lower a detection rate by at most their share, so a gap between corruptions "
+             "larger than the upper end of the interval cannot be explained by them.", "",
+             "| Corruption | Labelled | Visible | Subtle | Invisible (95% CI) |", "|---|---|---|---|---|"]
+    for _, r in vis.iterrows():
+        lines.append(f"| {r['corruption'].capitalize()} | {r['n']} | {_pct(r['visible'])} | {_pct(r['subtle'])} | "
+                     f"{_cell(r['invisible'], r['invisible_lo'], r['invisible_hi'])} |")
+    return "\n".join(lines) + "\n"
+
+
 def run_analysis(cfg: Config, calls: pd.DataFrame, cond: pd.DataFrame, total_spent: float) -> Path:
     out = cfg.path("results_dir")
     out.mkdir(parents=True, exist_ok=True)
@@ -396,12 +557,18 @@ def run_analysis(cfg: Config, calls: pd.DataFrame, cond: pd.DataFrame, total_spe
     cost = costs(calls)
     reasons = stated_reasons(df)
     chk = checklist_answers(df)
+    h5 = short_action_gain(df)
+    rj = reversal_jumps(df)
+    labels_path = cfg.root / "labels" / "visibility.csv"
+    vis = visibility(pd.read_csv(labels_path) if labels_path.exists() else pd.DataFrame())
     for name, table in [("metrics", m), ("comparisons", comp), ("consistency", cons),
-                        ("external", ext), ("costs", cost), ("reasons", reasons), ("checklist", chk)]:
+                        ("external", ext), ("costs", cost), ("reasons", reasons), ("checklist", chk),
+                        ("short_action", h5), ("reversal_jumps", rj), ("visibility", vis)]:
         if not table.empty:
             table.to_csv(out / f"{name}.csv", index=False)
     df.drop(columns=["raw_text"], errors="ignore").to_csv(out / "answers.csv", index=False)
     figure(m, out / "detection.png")
     (out / "summary.md").write_text(summary_markdown(cfg, df, m, comp, cons, ext, cost, reasons, total_spent)
-                                    + "\n" + checklist_markdown(chk))
+                                    + "\n" + checklist_markdown(chk) + "\n" + short_action_markdown(h5) + "\n" + reversal_jumps_markdown(rj)
+                                    + "\n" + visibility_markdown(vis))
     return out

@@ -15,6 +15,10 @@ physiq:
   base_url: https://storage.googleapis.com/physics-iq-benchmark
   fps: 30                            # 30 is the native rate; corruptions need it for short freezes and drops
 
+# Clips to leave out after checking them (quote the ids). Rerun `tbj build`: it only rewrites
+# conditions.csv, nothing is re-rendered. Record why in NOTEBOOK.md.
+exclude_videos: ["0103", "0104", "0105", "0301", "0302"]
+
 preprocess:
   width: 768                         # downscale from 4K; the judge sees ~70 tokens per frame regardless
   crf: 23

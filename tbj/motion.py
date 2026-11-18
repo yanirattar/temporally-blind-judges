@@ -48,6 +48,23 @@ def motion_profile(frames: np.ndarray, small_width: int = 160, lag: int = 3,
     return np.roll(changed, -(lag // 2))
 
 
+def _above_baseline(profile: np.ndarray, smooth: int = 5) -> np.ndarray:
+    """The signal smoothed over `smooth` frames, minus its median (noise and flicker)."""
+    kernel = np.ones(smooth, dtype=np.float32) / smooth
+    smoothed = np.convolve(profile, kernel, mode="same")
+    return smoothed - np.median(smoothed)
+
+
+def relative_motion(profile: np.ndarray, smooth: int = 5) -> np.ndarray:
+    """Motion per frame as a share of the clip's peak: 1 at the strongest movement, 0 at the
+    baseline. The motion span is where this is at least the motion threshold (0.2)."""
+    above = _above_baseline(profile, smooth)
+    peak = float(above.max()) if len(above) else 0.0
+    if peak <= 0:
+        return np.zeros(len(profile), dtype=np.float32)
+    return np.clip(above / peak, 0, None)
+
+
 def motion_span(profile: np.ndarray, threshold: float = 0.2, smooth: int = 5,
                 min_peak: float = 0.0005) -> MotionSpan:
     """Frames from the first to the last time the smoothed signal exceeds
@@ -58,9 +75,7 @@ def motion_span(profile: np.ndarray, threshold: float = 0.2, smooth: int = 5,
     n = len(profile)
     if n < 3:
         return MotionSpan(0, max(n - 1, 0), False, 0.0)
-    kernel = np.ones(smooth, dtype=np.float32) / smooth
-    smoothed = np.convolve(profile, kernel, mode="same")
-    above = smoothed - np.median(smoothed)
+    above = _above_baseline(profile, smooth)
     peak = float(above.max())
     if peak < min_peak:
         return MotionSpan(0, n - 1, False, peak)

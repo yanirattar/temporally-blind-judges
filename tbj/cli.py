@@ -8,6 +8,8 @@ Workflow
   tbj download --set selected      all videos of the scenes you labelled irreversible
   tbj build                        render the 13 conditions per clip
   tbj check                        open data/conditions/check.html and look at the corruptions
+  tbj check --visibility           label a sample of corruptions visible / subtle / invisible
+  tbj spots                        screen for clips whose motion detection caught the wrong thing
   tbj plan pilot                   how many calls a plan needs and what it should cost
   tbj run pilot                    run a plan now (sync)
   tbj batch submit main            run a plan through the Batch API (half price)
@@ -95,8 +97,19 @@ def cmd_build(cfg, args):
     print(f"Wrote {path}: {len(df)} conditions for {df['video_id'].nunique()} clips.")
 
 
+def cmd_spots(cfg, args):
+    from .spots import describe, spot_table
+    cond = _conditions(cfg)
+    print(describe(spot_table(cfg, cond), cond))
+
+
 def cmd_check(cfg, args):
-    from .build import write_check_page
+    from .build import write_check_page, write_visibility_page
+    if args.visibility:
+        page = write_visibility_page(cfg)
+        print(f"Open {page}, label each pair in the page, then press 'Download visibility.csv' and move it:\n"
+              f"  mv ~/Downloads/visibility.csv {cfg.root / 'labels' / 'visibility.csv'}")
+        return
     print(f"Open {write_check_page(cfg)} in a browser and confirm each corruption looks wrong.")
 
 
@@ -278,7 +291,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--limit", type=int, help="only the first N clips (for a quick test)")
     s.set_defaults(func=cmd_build)
 
-    sub.add_parser("check", help="build the corruption check page").set_defaults(func=cmd_check)
+    s = sub.add_parser("check", help="build the corruption check page")
+    s.add_argument("--visibility", action="store_true",
+                   help="a 32-clip sample of freezes, drops and partial reversals to label by eye")
+    s.set_defaults(func=cmd_check)
+    sub.add_parser("spots", help="screen for clips whose motion detection caught the wrong thing").set_defaults(func=cmd_spots)
 
     s = sub.add_parser("add-external", help="register outside videos with human labels")
     s.add_argument("csv", help="CSV with columns path,label[,id]")

@@ -1,0 +1,33 @@
+condition_id,condition,scenario,perspective,take,label,note
+0304__freeze_mild,freeze_mild,marble-run-y,left,2,subtle,freeze at the top of a small bounce; in this clip alone it shows as a brief hitch compared with the marble’s smooth motion on other levels; needed the stated time
+0201__freeze_mild,freeze_mild,ball-and-block-fall,right,2,visible,very easily the freeze is mid drop for enough frames
+0383__freeze_mild,freeze_mild,water-in-juice,center,2,visible,visible (short but not super brief) and on main event
+0192__freeze_mild,freeze_mild,weight-on-paper,right,1,visible,visible (short but not super brief) and on main event
+0128__freeze_medium,freeze_medium,napkin-soak,center,1,visible,visible (short but not super brief) and on main event
+0338__freeze_medium,freeze_medium,paper-smoke,center,2,visible,visible (short but not super brief) and on main event
+0380__freeze_medium,freeze_medium,unstable-block-stack,center,2,visible,visible (short but not super brief) and on main event
+0102__freeze_medium,freeze_medium,magnet-wrench,right,1,visible,visible (short but not super brief) and at the end of the main event and can be seen since something stopped and the moved again without an exterior force
+0248__freeze_strong,freeze_strong,dominos-with-space,center,2,visible,main event extremely visible
+0160__freeze_strong,freeze_strong,single-cradle,left,1,visible,main event extremely visible
+0216__freeze_strong,freeze_strong,ball-in-sand,right,2,visible,env of main event extremely visible
+0106__freeze_strong,freeze_strong,marble-run-y,left,1,visible,at the start of the main event and on top of screen so need to pay attention but part of the main movement and visible
+0300__drop_mild,drop_mild,magnet-wrench,right,2,visible,whilst brief its on the main event and visible
+0213__drop_mild,drop_mild,ball-in-basket,right,2,invisible,the moment is indeed faster compared to clean version but it seems natural.
+0327__drop_mild,drop_mild,napkin-soak,right,2,invisible,supposed to happen at main event but nothing seems of on the speed at which napkin moved after impact or got soaked
+0330__drop_mild,drop_mild,paint-on-glass,right,2,visible,before the main event I would say of painting but part of a movement and visible
+0126__drop_medium,drop_medium,mug-breaks,right,1,visible,part of main event and can seen clearly that cup breaks too fast at impact
+0395__drop_medium,drop_medium,weight-protects-duck,center,2,visible,part of aftermath since its after ball hit something but whilst it moves and clearly seen to teleport
+0045__drop_medium,drop_medium,cut-paper,right,1,invisible,drop right at start of movement when paper rips but when applying more power a paper rip can happen that fast
+0186__drop_medium,drop_medium,water-in-juice,right,1,visible,only after seeing frame by frame I was able to see that for a very brief moment cups is filled faster (like more juice teleported up the cup volume) and then was able to see it at normal speed and at end of video since motion continues there is that 0.1s freeze so subtle but the end freeze since movement  continued makes it visible
+0071__drop_strong,drop_strong,juice-in-water,center,1,visible,at beginning of main event the water change color too fast and slight freeze at the end
+0199__drop_strong,drop_strong,ball-and-block-fall,left,2,visible,part of main event objects teleport to bottom without showing their falling and here freeze at end doesn't impact since no movement
+0156__drop_strong,drop_strong,rolling-reflection,right,1,visible,part of main event ball teleports forward
+0353__drop_strong,drop_strong,rolling-reflection,center,2,visible,part of main event ball teleports forward
+0196__reversal_mild,reversal_mild,weight-protects-duck,left,1,visible,part of main event ball appears out of nowhere and moves faster after impact
+0112__reversal_mild,reversal_mild,match-blows-balloon,left,1,visible,part of main event balloon pops unpins and disappears again
+0198__reversal_mild,reversal_mild,weight-protects-duck,right,1,visible,part of main event and impossible since ball speeds up after impact
+0029__reversal_mild,reversal_mild,ball-train,center,1,visible,moment starts out of nowhere
+0035__reversal_medium,reversal_medium,block-domino,center,1,visible,dominos teleports to falling state and then get back up without being touched
+0382__reversal_medium,reversal_medium,water-in-juice,left,2,visible,cup suddenly teleport to filled and then unfills so both teleportation and the fact that the container sucks water without a reasonable way to do it to then switch to pour without any change
+0124__reversal_medium,reversal_medium,mug-breaks,left,1,visible,part of main event and impossible since cup unbreak
+0286__reversal_medium,reversal_medium,liquid-overfill,left,2,visible,part of main event and impossible since cup unspill

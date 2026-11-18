@@ -18,3 +18,11 @@ hypotheses for the experiment's results:
   direction, so the judge mostly picks the clip that plays forward rather than "neither".
   Hypothesis is wrong if reversal detection rises by less than 20 points, or if "neither" answers make
   freeze and drop detection rise.
+
+• H5 (exploratory, added after the placement check, before any Gemini call): dense sampling helps more on clips whose main action is short. In 72 of 217 clips the detected motion lasts under 1 second, so at 1 frame/s the judge sees at most one frame of the action and can only compare the before and after states. At 4 frames/s it sees the action itself.
+  Test: compare the gain in detection (dense minus default, medium and strong corruptions) for clips with under 1 s of motion versus clips with more.
+  Hypothesis is wrong if the gain is about the same for both groups, or larger for long-action clips.
+
+• H6 added on 2026-11-18, before any Gemini call, from labeling the visibility sample): partial reversals (¼ and ½ of the clip) are caught more often than the full reversal, even though the full reversal runs backward for longest. A partial reversal jumps at both edges of its backward stretch, and a jump can be caught without knowing which way time runs; the full reversal has no jumps, only direction. If the judge understood direction, the full reversal would be caught most.
+  Test: detection of the ¼ and ½ reversals minus the full reversal, on the same clips, at default settings (and ½ vs full at 4 frames/s).
+  Wrong if the full reversal is caught as often as the partial ones, or more.
