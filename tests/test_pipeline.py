@@ -21,6 +21,7 @@ def test_full_pipeline(tmp_path):
     data["preprocess"]["width"] = synthetic.W
     data["plans"]["pilot"]["clips"] = 2
     data["plans"]["consistency"]["clips"] = 2
+    data["plans"]["sampling_pilot"]["clips"] = 2
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.safe_dump(data))
     cfg = Config(data, tmp_path)
@@ -45,16 +46,20 @@ def test_full_pipeline(tmp_path):
     run("batch", "collect", "--fake")
     run("run", "consistency", "--fake")
     run("run", "checklist_dense", "--fake")
+    run("run", "sampling_pilot", "--fake")
+    run("batch", "submit", "sampling", "--fake")
+    run("batch", "collect", "--fake")
     run("run", "main", "--fake")  # everything cached: must run nothing new
     run("analyze")
 
     calls = pd.read_csv(tmp_path / "results" / "answers.csv")
     per_setup = calls[calls["repeat"] == 0].groupby("setup").size().to_dict()
-    assert per_setup == {"default": 52, "dense": 36, "checklist": 36, "paired": 36, "checklist_dense": 4}
+    assert per_setup == {"default": 52, "dense": 36, "checklist": 36, "paired": 36, "checklist_dense": 4, "sampling_aware": 36}
     summary = (tmp_path / "results" / "summary.md").read_text()
     assert "Flag rate by condition" in summary and "Consistency" in summary
     assert "## Checklist answers" in summary and "Checklist, 4 frames/s" in summary
     assert "## H5:" in summary and "## H6:" in summary and "hand-labelled" not in summary  # no visibility labels yet
+    assert "## Exploratory: telling the judge" in summary and "## Why does the judge flag" in summary
     run("spots")
     spots = pd.read_csv(tmp_path / "data" / "motion_at_spot.csv")
     assert len(spots) == 4 * 12 and spots["motion_at_spot"].notna().sum() == 4 * 8  # 3 freezes, 3 drops, 2 partial reversals

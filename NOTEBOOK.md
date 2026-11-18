@@ -47,6 +47,7 @@ Irreversible scenes where I expect Gemini to **catch** it:
   from labelling. Its analysis, like H5's, was committed before any Gemini call.
 - 2026-11-18: Kept the end-hold of drops; measured how far it can reach and planned a check instead of
   rebuilding (see Limitations).
+- 2026-11-18 (after the pilot, before the main runs): exploratory additions. (1) sampling_aware setup: the default prompt plus one paragraph saying the video is sampled once per second (sampling_v1), at 1 fps on clean, medium and strong clips. Motivated by the pilot’s 45% false alarms at default, 17 of 25 describing teleports during falls between sampled frames. It runs in full whatever the 80-call check shows, as long as the answers parse and the task is understood. (2) Stated-reason categories: keyword lists fixed today from the pilot answers (backward motion, jump or disappearance, pause, none). H1–H6 unchanged.
 
 ## Observations
 
@@ -281,5 +282,7 @@ close to it is inconclusive (not a reason to label more).
 - **2026-11-18, smoke test:** failed on the free tier (gemini-3.8-flash allows 20 requests a day there; retries after 503 “high demand” errors used them up). Switched to prepaid billing.
 
 - **2026-11-18, pilot:** 320 calls (20 clips × clean, reversal_strong, freeze_medium, shuffle_medium × 4 setups), live, 320 ok, no parse errors, $0.78. Input per call 730 / 2,314 / 821 / 1,189 tokens (default / dense / checklist / paired; 66 tokens per frame, so dense gets 32 frames vs 8). Output + thinking 274 / 326 / 321 / 651 on average. Paired put the real clip in A 39 times, B 35, and answered “neither” 6 times. Plausibility scores are almost all-or-nothing (1: 153, 2: 3, 5: 84), so AUROC will add little beyond detection and false alarms. No prompt changes. Frozen from here: model, prompts, frame rates, thinking level, resolution. Projected batch cost about $11.
+Clean clips flagged 45% at default (35% dense, 10% paired); 17 of 25 single-clip false alarms describe a teleport or disappearance during a fast event, mostly a fall between two sampled frames. Some corrupted clips are flagged for the same reason rather than for the corruption (e.g. 0048, reversed).
+
 
 

@@ -24,7 +24,7 @@ git clone <your repo url> temporally-blind-judges && cd temporally-blind-judges
 python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
-pytest                      # 60 tests, about a minute
+pytest                      # 69 tests, about a minute
 tbj demo --fresh            # the whole pipeline on synthetic clips with a fake judge: free, about 3 minutes
 ```
 
@@ -59,7 +59,8 @@ Run every command from the repo folder.
 | 8b | `tbj spots` | Screen for clips whose motion detection caught a side event (e.g. a reflection); lists clips to look at | ~5 min |
 | 8c | `tbj check --visibility` | 32 freezes, drops and partial reversals to label visible / subtle / invisible in the page; download the CSV to `labels/visibility.csv` | ~45 min to label |
 | 9 | `tbj plan pilot` then `tbj run pilot` | 20 clips × 4 conditions × 4 setups, about 320 calls | ~1 h |
-| 10 | `tbj batch submit main` and `tbj batch submit setups` | The full run at half price | 5 min, results within 24 h |
+| 10 | `tbj batch submit main`, then `setups`, `consistency`, `checklist_dense` | The full run at half price | 5 min, results within 24 h |
+| 10b | `tbj run sampling_pilot`, then `tbj batch submit sampling` | Exploratory, added after the pilot: the sampling-aware prompt (80 live calls on the pilot clips, then 1,953 by batch) | 10 min, results within 24 h |
 | 11 | `tbj batch collect` | Stores the answers (run `tbj batch status` to check first) | 1 min |
 | 12 | `tbj run consistency` | The same questions again on 30 clips, to measure stability | ~30 min |
 | 13 | `tbj analyze` | `results/summary.md`, `results/detection.png`, CSV tables | 1 min |
@@ -113,6 +114,8 @@ A useful property: the clean clip played backward is, frame for frame, the stron
 | `dense` | single | `default_v1` | 4 | Same, with 4× the frames |
 | `checklist` | checklist | `checklist_v1` | 1 | Explicit yes/no questions: backward motion, pauses, jumps, impossible order |
 | `paired` | paired | `paired_v1` | 1 | The clip and its reversed copy, in random order: which one runs forward? |
+| `checklist_dense` | checklist | `checklist_v1` | 4 | The checklist with 4× the frames, on clean clips (tests H3's explanation) |
+| `sampling_aware` | single | `sampling_v1` | 1 | Exploratory, added after the pilot: the default prompt plus one paragraph saying the video is sampled once per second |
 
 Each setup changes one thing relative to `default`, so differences can be attributed. Answers are JSON constrained by a schema (`tbj/judge.py`), with the one-line reason first. All calls use static frame extraction (frames at exactly the setup's rate, all placed in context, rather than Gemini's opt-in agentic mode that chooses what to watch), low media resolution (about 70 tokens per frame on Gemini 3), low thinking, the model's default temperature and no audio.
 
@@ -131,6 +134,7 @@ Each setup changes one thing relative to `default`, so differences can be attrib
 
 Two planned analyses are written into the code before any judge call:
 - **H5:** the gain from dense sampling on clips whose detected motion lasts under 1 s vs 1 s or more (medium and strong corruptions), and the difference between the two gains.
+- **Exploratory, added after the pilot (before the main runs):** the pilot's clean clips were flagged 45% of the time at default settings, mostly for objects "teleporting" during falls that happened between two sampled frames. Two additions follow from that: the `sampling_aware` setup (does telling the judge how it sees the video cut false alarms, and at what cost in detection?), and stated-reason categories (keyword lists fixed on 2026-11-18: backward motion, jump or disappearance, pause, none), which show whether a corruption was caught for the right reason.
 - **H6:** detection of the ¼ and ½ reversals against the full reversal, on the same clips, at default and dense settings. Partial reversals jump at both edges; the full reversal has no jumps, only direction.
 - **Visibility (control):** a corruption on a near-still moment can be physically impossible yet invisible, and counts as a miss. `tbj check --visibility` shows a random sample of 32 freezes, drops and partial reversals to label by eye; `tbj analyze` reports the share labelled invisible per corruption with a 95% interval. Invisible corruptions can lower a detection rate by at most their share, so a gap larger than that bound cannot be explained by them. (An automatic pixel-based measure was tried first and dropped: it failed checks against the eye in both directions; `tbj spots` keeps it only as a screen for clips whose motion detection caught a side event.)
 
