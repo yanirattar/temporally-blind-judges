@@ -255,10 +255,12 @@ REASON_PATTERNS = {
         r"(abrupt|hard|sudden|jarring|discontinuous) cuts?|cuts? (between|back)|splic|discontinu|continuity|"
         r"without (any )?(visible |continuous )?(falling |physical )?(motion|movement|trajectory)|between frames|"
         r"skip(s|ped|ping)?\b|instant(ly|aneously) (switch|snap|jump|appear|teleport|change|move)|snap(s|ping)? between|"
-        r"back and forth|abruptly (jump|appear|switch|snap|change|drop)|jumps? (abruptly|erratically|between)|looping", re.I),
+        r"back and forth|abruptly (jump|appear|switch|snap|change|drop)|jumps? (abruptly|erratically|between)|looping|"
+        # Added 2026-11-18 after the sampling pilot, before any main-run data:
+        r"(sudden(ly)?|abrupt(ly)?|instantly) (jump\w*|appear\w*)|out of thin air|\bno continuous\b|\bresets\b", re.I),
     "pause": re.compile(
         r"frozen|freez|paus|stops? (abruptly|suddenly)|abrupt(ly)? stop|dead stop|halt|motionless|hover|stall|stuck|"
-        r"hang(s|ing)? (in|motionless)", re.I),
+        r"hang(s|ing)? (in|motionless)\b", re.I),  # \b added 2026-11-18: "hang intact" is not a pause
 }
 REASON_LABELS = {"backward": "Backward motion", "jump": "Jump or disappearance", "pause": "Pause or freeze",
                  "none": "None of these"}

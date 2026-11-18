@@ -22,7 +22,7 @@ Pass 1: 2026-11-10. Pass 2: 2026-11-10.
 ## My scene predictions (written before any results)
 
 Irreversible scenes where I expect Gemini to **miss** the full reversal:
-1. ball-in-sand 
+1. ball-in-sand
 2. single-cradle
 3. match
 4. paper-smoke
@@ -47,7 +47,16 @@ Irreversible scenes where I expect Gemini to **catch** it:
   from labelling. Its analysis, like H5's, was committed before any Gemini call.
 - 2026-11-18: Kept the end-hold of drops; measured how far it can reach and planned a check instead of
   rebuilding (see Limitations).
-- 2026-11-18 (after the pilot, before the main runs): exploratory additions. (1) sampling_aware setup: the default prompt plus one paragraph saying the video is sampled once per second (sampling_v1), at 1 fps on clean, medium and strong clips. Motivated by the pilot’s 45% false alarms at default, 17 of 25 describing teleports during falls between sampled frames. It runs in full whatever the 80-call check shows, as long as the answers parse and the task is understood. (2) Stated-reason categories: keyword lists fixed today from the pilot answers (backward motion, jump or disappearance, pause, none). H1–H6 unchanged.
+- 2026-11-18 (after the pilot, before the main runs): exploratory additions. (1) sampling_aware setup: the
+  default prompt plus one paragraph saying the video is sampled once per second (sampling_v1), at 1 fps on
+  clean, medium and strong clips. Motivated by the pilot's 45% false alarms at default, 17 of 25 describing
+  teleports during falls between sampled frames. It runs in full whatever the 80-call check shows, as long as
+  the answers parse and the task is understood. (2) Stated-reason categories: keyword lists fixed today from
+  the pilot answers (backward motion, jump or disappearance, pause, none). H1–H6 unchanged.
+- 2026-11-18 (before the main runs): reason keyword fixes. The sampling pilot's reasons showed misses
+  ("suddenly jumping/appears", "out of thin air", "no continuous", "resets") and a false pause ("hang intact"
+  matched "hang in"). Changes 7 of 400 pilot reasons, all to the right tag. Lists now frozen; the hand check
+  of 50 main-run reasons measures them (see Failure review).
 
 ## Observations
 
@@ -64,6 +73,15 @@ Irreversible scenes where I expect Gemini to **catch** it:
     misses mild drops, check whether its reasons treat jumps as glitches.
   - Partial reversals carry two cues, the jumps at their edges and the backward motion (0382: the cup jumps
     to full, empties up into the container, jumps back). Led to H6.
+- 2026-11-18, from the pilots:
+  - Gaps can be worded as a missing cause, not a jump: on 0253 both 1 fps prompts say the dominoes fall
+    "without any contact"; dense sees the stick hit and passes the clip. So the jump share undercounts
+    gap-caused false alarms; dense − default false alarms (already in the setup comparisons) measure them
+    whatever the wording.
+  - Missed full reversals show no irreversible change: 0206 and 0195 are visible only through dynamics
+    (speed after a hit, no gripping motion). The paired judge named the 0195 cue on its own ("they
+    spontaneously lift off the pillows into the air without any upward pulling"). Post hoc, n = 2: check in
+    the failure review.
 
 ## Subtle scenes (labelled reversible)
 
@@ -159,41 +177,53 @@ print(edge[['video_id', 'scenario', 'from_s', 'to_s']].to_string(index=False))
     so skipping 0.5 s of it looks like a fast pop. Drops are hardest to see in events that happen in a flash. Fits H2.
 - **Start-of-clip check:** 7 clips: 0103 and all 6 juice-in-water clips. The juice-in-water pattern repeats
   across every angle and take, so it is likely the juice entering the water at the start, not an artifact.
-  Checked 0070: in clean, the juice pours from the first frame; freeze_medium visibly pauses the pour, briefly. The motion is real, so all 6 juice-in-water clips stay.
+  Checked 0070: in clean, the juice pours from the first frame; freeze_medium visibly pauses the pour, briefly.
+  The motion is real, so all 6 juice-in-water clips stay.
 - **Decision:** 0103 excluded via `exclude_videos` in config.yaml; 221 clips remain (2,873 conditions).
-Why 0103 is excluded rather than kept: the scene is labelled irreversible because of the marble, but its motion window caught a door reflection, so the freezes and drops pause or speed up the reflection. A door pausing is possible, so these clips are probably not impossible, and a judge answering “plausible” would be wrongly scored as a miss. Those misses would fall on freezes and drops, where H1 and H2 predict misses, so keeping it would tilt the results toward my hypotheses. Rule, applied to all 7 flagged clips: exclude a clip if its corruptions miss the event that made the scene irreversible (6 kept, 1 excluded). Decided before any Gemini call.
-Alternatives considered: placing 0103's corruptions on the marble by hand (rejected: hand-picked placement for one clip, at the most visible moment, breaks the same-procedure-for-every-clip rule) and trimming its first 0.3 s so motion detection finds the marble (rejected: it can't be a general rule, since juice-in-water pours start at frame 0, so it would be a one-clip special case).
-Idea for later: does the judge notice timing errors in small background events? This would need several clips where the background event itself can’t pause, with corruptions placed on it on purpose.
 
+Why 0103 is excluded rather than kept: the scene is labelled irreversible because of the marble, but its motion
+window caught a door reflection, so the freezes and drops pause or speed up the reflection. A door pausing is
+possible, so these clips are probably not impossible, and a judge answering "plausible" would be wrongly scored
+as a miss. Those misses would fall on freezes and drops, where H1 and H2 predict misses, so keeping it would tilt
+the results toward my hypotheses. Rule, applied to all 7 flagged clips: exclude a clip if its corruptions miss
+the event that made the scene irreversible (6 kept, 1 excluded). Decided before any Gemini call.
+
+Alternatives considered: placing 0103's corruptions on the marble by hand (rejected: hand-picked placement for
+one clip, at the most visible moment, breaks the same-procedure-for-every-clip rule) and trimming its first 0.3 s
+so motion detection finds the marble (rejected: it can't be a general rule, since juice-in-water pours start at
+frame 0, so it would be a one-clip special case).
+
+Idea for later: does the judge notice timing errors in small background events? This would need several clips
+where the background event itself can't pause, with corruptions placed on it on purpose.
 
 ### The 24 pairs on check.html
 
 | Condition | Clip | OK? | Note |
 |---|---|---|---|
 |reversal_mild|paper-fall-water · right take 2|yes|Lands on the aftermath, not the drop: water motion runs backward (grows by itself), with jumps at both edges of the reversed stretch. Likely miss at 1 fps.|
-|reversal_mild|dominos-with-space|yes|Dominos come back up in an ipossible way (ignoring magnets) then go back down.|
+|reversal_mild|dominos-with-space|yes|Dominos come back up in an impossible way (ignoring magnets) then go back down.|
 |reversal_medium|napkin-soak · left take 1|yes|Very clear that napkin gets pulled up and unwet in an impossible way.|
 |reversal_medium|match · left take 1|yes|Match lights again after coming out of the water: impossible. The states last long enough to be sampled at 1 fps, so a miss here points to the judge ignoring order, not to sampling.|
-|reversal_strong|ball-hits-duck · left take 1|yes|Ball starts mmotion suddnely.|
-|reversal_strong|balls-collide · center take 1|yes|Very clearly impossible as the balls momvments are gnereated without exterior force.|
-|shuffle_mild|mug-breaks · right take 2|yes|Starts broken, jumps back to the intact mug, then it falls and breaks: impossible. The jump survives any frame rate, but the real fall-and-break still plays forward, so a judge summing up “a mug breaks” could miss the broken start.|
-|shuffle_mild|duck-and-dominos · left take 2|yes|The dominos starts fallen and then jump back into place to then cleanly be knocked over.|
-|shuffle_medium|ball-and-block-fall · left take 2|yes|The objects fall, then suddnely jump back up and then suddnely back down. If not juding the relation between frames, nothing seems off.|
+|reversal_strong|ball-hits-duck · left take 1|yes|Ball starts motion suddenly.|
+|reversal_strong|balls-collide · center take 1|yes|Very clearly impossible as the balls' movements are generated without exterior force.|
+|shuffle_mild|mug-breaks · right take 2|yes|Starts broken, jumps back to the intact mug, then it falls and breaks: impossible. The jump survives any frame rate, but the real fall-and-break still plays forward, so a judge summing up "a mug breaks" could miss the broken start.|
+|shuffle_mild|duck-and-dominos · left take 2|yes|The dominos start fallen and then jump back into place to then cleanly be knocked over.|
+|shuffle_medium|ball-and-block-fall · left take 2|yes|The objects fall, then suddenly jump back up and then suddenly back down. If not judging the relation between frames, nothing seems off.|
 |shuffle_medium|cut-paper · left take 2|yes|Order 3-2-1-0: segments play in reverse order, each forward. Starts fully cut, then jumps back three times to less-cut states, ending with the whole sheet just starting to be cut. Each frame looks normal and the jumps survive any sampling, so a miss would mean the judge ignored order.|
-|shuffle_strong|liquid-overfill · right take 2|yes|States constanly change between spilled and unspilled|
+|shuffle_strong|liquid-overfill · right take 2|yes|States constantly change between spilled and unspilled.|
 |shuffle_strong|domino-in-juice · right take 2|yes|Domino jumps back up.|
-|freeze_mild|unstable-block-stack · left take 2|yes|Only for a short moment (can be missed at 1fps and needs dense sampling) the cubes freeze right before they hit the table just a bit higher than the surface and then keep falling cleenly.|
-|freeze_mild|ball-train · center take 2|yes|Ball stops mid-movment to then resume at full speed, contradicting inertia principles, for a short moment.|
+|freeze_mild|unstable-block-stack · left take 2|yes|Only for a short moment (can be missed at 1 fps and needs dense sampling) the cubes freeze right before they hit the table, just a bit higher than the surface, and then keep falling cleanly.|
+|freeze_mild|ball-train · center take 2|yes|Ball stops mid-movement to then resume at full speed, contradicting inertia, for a short moment.|
 |freeze_medium|duck-falls-in-box · right take 2|yes|The duck stops falling mid-air to then resume.|
-|freeze_medium|napkin-soak · left take 2|yes|The napking stops falling mid-air to then resume.|
-|freeze_strong|rolling-reflection · left take 1|yes|The ball stops for 1 s just before the object, then restarts, hits it and stops: impossible (it restarts from rest with nothing pushing it). The restart, hit and stop take under 1 s, so at 1 fps they can fall between two sampled frames, and the judge would see only “near the object” followed by “at rest after the hit”. Needs dense.|
+|freeze_medium|napkin-soak · left take 2|yes|The napkin stops falling mid-air to then resume.|
+|freeze_strong|rolling-reflection · left take 1|yes|The ball stops for 1 s just before the object, then restarts, hits it and stops: impossible (it restarts from rest with nothing pushing it). The restart, hit and stop take under 1 s, so at 1 fps they can fall between two sampled frames, and the judge would see only "near the object" followed by "at rest after the hit". Needs dense.|
 |freeze_strong|paper-in-water · center take 2|yes|Paper floats without itself or water below it moving.|
 |drop_mild|ball-in-basket · center take 1|yes, subtle|The 0.1 s cut removes the moment the ball touches the desk, so it bounces before reaching the desk: impossible. The bounce falls within one sampled gap even at 4 fps, so likely missed at both rates.|
 |drop_mild|marble-run-y · right take 2|yes, subtle|Lands on the bounce: the marble skips part of its arc and is back on the track too soon, which is impossible for that height. But it looks like a plausible smaller bounce. Near the limit of what anyone can see.|
 |drop_medium|duck-falls-in-box · right take 1|yes|The object is seen being let go but disappears instead of us seeing it falling inside the box.|
-|drop_medium|paper-fall-water · center take 2 (0332)|yes, invisible|Skip lands on the settling, about 1.7 s after the paper hits the water. Not visible by eye, even frame by frame. Measurable but small: frames 139→140 change 1.26% of pixels vs 0.42–0.84% for neighbouring steps (the landing: 3.48%), on the water and the paper’s top edge.|
-|drop_strong|paper-in-water · center take 2|yes|The paper ball on the water suddnely change its orientation without movemnt being seen and also stabilizes much faster on the water.|
-|drop_strong|ball-hits-duck · center take 1|yes|Both the ball's direction change without showing its impact with the duck, and the duck is being pushed back without showing something causing it to move.|
+|drop_medium|paper-fall-water · center take 2 (0332)|yes, invisible|Skip lands on the settling, about 1.7 s after the paper hits the water. Not visible by eye, even frame by frame. Measurable but small: frames 139→140 change 1.26% of pixels vs 0.42–0.84% for neighbouring steps (the landing: 3.48%), on the water and the paper's top edge.|
+|drop_strong|paper-in-water · center take 2|yes|The paper ball on the water suddenly changes its orientation without movement being seen, and also stabilizes much faster on the water.|
+|drop_strong|ball-hits-duck · center take 1|yes|Both the ball's direction changes without showing its impact with the duck, and the duck is pushed back without anything shown causing it to move.|
 
 0332 is marked invisible by the visibility rules of 2026-11-18 (it can't be seen even frame by frame).
 
@@ -217,11 +247,11 @@ corruptions land on it. 0139 (paper-smoke), 0263 (fill-glass-red-drink) and 0382
 motion is the event itself (burning paper, the pour). Their zeros come from steady motion, which the median
 treats as noise.
 
-**Start of clips (2026-11-18).** 46 freezes and drops start in the first 0.5 s, in 23 clips; 27 of them in juice-in-water,
-whose window is the pour (checked on 0070). The other 19, in 8 scenes, all land on the scene’s own action, already under 
-way: the claw or needle moving before the release (domino-in-juice, dominos-with-space), pours (fill-glass-red-drink,
-water-in-juice), burning (match, paper-smoke), the rig turning the wrench holder or spinning the brush (magnet-wrench,
-paint-on-glass). In 0132 the brightening and the brush start together. All kept.
+**Start of clips (2026-11-18).** 46 freezes and drops start in the first 0.5 s, in 23 clips; 27 of them in
+juice-in-water, whose window is the pour (checked on 0070). The other 19, in 8 scenes, all land on the scene's own
+action, already under way: the claw or needle moving before the release (domino-in-juice, dominos-with-space),
+pours (fill-glass-red-drink, water-in-juice), burning (match, paper-smoke), the rig turning the wrench holder or
+spinning the brush (magnet-wrench, paint-on-glass). In 0132 the brightening and the brush start together. All kept.
 
 ## Visibility sample (2026-11-18)
 
@@ -277,12 +307,61 @@ close to it is inconclusive (not a reason to label more).
   slowing the end (a stutter or blended frames, which is a second corruption) and trimming all clips to 7.5 s so
   drops fill the end with real footage (a full rebuild and redoing the checks, for a cue the judge mostly can't see).
 
+## Failure review: what to check (fixed 2026-11-18, before the main runs)
+
+1. **Keyword tags.** Hand-label about 50 random flagged reasons from the main run (backward / jump / pause / none)
+   and report agreement with the tags. High: the tags stand. Low: report the hand labels and treat the tags as approximate.
+2. **Freeze flags.** Check every pause-tagged freeze flag by hand. It counts as the right reason only if the reason
+   (1) describes a stop, hang or pause, (2) of the object and at the moment the freeze happens, and (3) is not the
+   claim the same setup makes about the clean copy. Label each **right**, **ambiguous** (1 and 3 hold, but the
+   moment in the judge's own sentence can be read either way) or **wrong**. Report right as the headline count
+   and ambiguous next to it. Whether freezes cause such claims at all is answered across clips (pause share on
+   freezes vs clean), not by single clips (0331).
+3. **Missed full reversals.** Label each one missed at default, and as many random caught ones, "state change"
+   (breaks, fills, spills, falls over) or "dynamics only" (speed after a hit, contact). Compare the shares.
+   From 0195 and 0206; post hoc, exploratory.
+4. **End-hold.** Count flagged strong drops at 4 fps whose reasons mention a stop at the end (see Limitations).
+5. **Mild drops.** If missed, check whether the reasons treat the jump as a glitch rather than physics (see Observations).
+
 ## Runs
 
-- **2026-11-18, smoke test:** failed on the free tier (gemini-3.8-flash allows 20 requests a day there; retries after 503 “high demand” errors used them up). Switched to prepaid billing.
+- **2026-11-18, smoke test:** failed on the free tier (gemini-3.8-flash allows 20 requests a day there; retries
+  after 503 "high demand" errors used them up). Switched to prepaid billing.
 
-- **2026-11-18, pilot:** 320 calls (20 clips × clean, reversal_strong, freeze_medium, shuffle_medium × 4 setups), live, 320 ok, no parse errors, $0.78. Input per call 730 / 2,314 / 821 / 1,189 tokens (default / dense / checklist / paired; 66 tokens per frame, so dense gets 32 frames vs 8). Output + thinking 274 / 326 / 321 / 651 on average. Paired put the real clip in A 39 times, B 35, and answered “neither” 6 times. Plausibility scores are almost all-or-nothing (1: 153, 2: 3, 5: 84), so AUROC will add little beyond detection and false alarms. No prompt changes. Frozen from here: model, prompts, frame rates, thinking level, resolution. Projected batch cost about $11.
-Clean clips flagged 45% at default (35% dense, 10% paired); 17 of 25 single-clip false alarms describe a teleport or disappearance during a fast event, mostly a fall between two sampled frames. Some corrupted clips are flagged for the same reason rather than for the corruption (e.g. 0048, reversed).
+- **2026-11-18, pilot:** 320 calls (20 clips × clean, reversal_strong, freeze_medium, shuffle_medium × 4 setups),
+  live, 320 ok, no parse errors, $0.78. Input per call 730 / 2,314 / 821 / 1,189 tokens (default / dense / checklist /
+  paired; 66 tokens per frame, so dense gets 32 frames vs 8). Output + thinking 274 / 326 / 321 / 651 on average.
+  Paired put the real clip in A 39 times, B 35, and answered "neither" 6 times. Plausibility scores are almost
+  all-or-nothing (1: 153, 2: 3, 5: 84), so AUROC will add little beyond detection and false alarms. No prompt changes.
+  Frozen from here: model, prompts, frame rates, thinking level, resolution. Projected batch cost about $11.
+  - Clean clips flagged 45% at default (35% dense, 10% paired); 17 of 25 single-clip false alarms describe a teleport
+    or disappearance during a fast event, mostly a fall between two sampled frames. Some corrupted clips are flagged
+    for the same reason rather than for the corruption (e.g. 0048, reversed).
+  - Of the 18 single-clip freeze flags (rule under Failure review): 0 right, 1 ambiguous (0196 dense), 17 wrong.
+    9 are teleports during falls and 7 misread the scene, as on clean clips; 0211 dense names a stop in the wrong place.
+  - 0211 freeze_medium: the freeze (3.0–3.5 s) starts just after the release, while the ball is falling, so it hangs
+    in mid-air for 0.5 s: visible at 30 fps, two identical frames at 4 fps, at most one frozen frame at 1 fps. The
+    dense judge's "dead stop, virtually no bounce" is the right kind of claim at the wrong place (the landing), and
+    false (the bounce is visible).
+  - 0196 freeze_medium: after hitting the duck, the ball stops just before rolling off the table. The dense judge:
+    "comes to a stop without colliding into anything, and then spontaneously rolls backward and falls off the table".
+    For: the stop is the right kind, on the only moving object, and appears only in the freeze copy (its clean answer
+    has no stop, just "reverses its trajectory… without colliding"). Against: in its sentence the stop comes before
+    "rolls backward", while the freeze comes after the turn. Read loosely, "stops, then rolls backward and falls off"
+    matches the freeze; read literally, the stop is at the turn. Ambiguous.
 
-
-
+- **2026-11-18, sampling pilot:** sampling_aware, 20 clips × 4 conditions, 80 calls, live. 80/80 parsed.
+  - Flags vs default on the same clips: clean 30% (45%), reversal strong 90% (90%), freeze medium 30% (40%), shuffle
+    medium 100% (95%). 6 of 20 freeze answers flipped between prompts, so 3-clip differences are noise; the full batch decides.
+  - Clean: 0199, 0331 (teleports) and 0184 gone, none new. Of the 6 left, dense passes 4 in the pilot (0211, 0253,
+    0306, 0381): gaps between frames, which showing more frames fixes and telling doesn't. 0262 (dispenser level)
+    comes and goes across runs.
+  - Freeze: 0211 and 0253 make the same claims as on their clean copies. 0331 "the water surface… remaining completely
+    motionless" after the drop matches the freeze (after the impact, ball and water stop for 0.5 s), and the same prompt
+    passed the clean copy; but at 1 fps at most one frame is frozen, and the default judge misread this clip's water
+    before ("no realistic splash"). Right by the rule; one clip can't show the freeze caused it.
+  - Both prompts miss the same full reversals, 0195 and 0206. Both are visible to me through dynamics only: in 0206
+    the ball comes in slowly and speeds up after hitting the duck; in 0195 the paper rises to the claw with no
+    gripping motion. Real misses, no limitation needed.
+  - Reading the reasons led to the keyword fixes (see Decisions).
+  - Go: the full sampling batch runs as planned.

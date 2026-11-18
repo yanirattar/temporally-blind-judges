@@ -15,6 +15,13 @@ def test_reason_tags_on_pilot_style_reasons():
     assert reason_tags("The rolling ball suddenly reverses its trajectory on the flat table.") == set()
     assert reason_tags("The water level inside the dispenser does not decrease at all.") == set()
     assert reason_tags("The orange ball phases directly through the crate.") == set()
+    # Added after the sampling pilot (2026-11-18):
+    assert reason_tags("The ball appears on the lower ramp before suddenly jumping to the top of the track.") == {"jump"}
+    assert reason_tags("A large black balloon suddenly appears out of thin air on the table.") == {"jump"}
+    assert reason_tags("It abruptly transforms into a duck with no continuous physical transition.") == {"jump"}
+    assert reason_tags("The liquid level resets and drops between 00:05 and 00:06.") == {"jump"}
+    assert reason_tags("The pieces reassemble against gravity to hang intact from the clip.") == {"backward"}
+    assert reason_tags("The ball hangs in mid-air.") == {"pause"}
 
 
 def test_reason_categories_counts_only_flagged_single_clip_answers():
