@@ -17,7 +17,7 @@ physiq:
 
 # Clips to leave out after checking them (quote the ids). Rerun `tbj build`: it only rewrites
 # conditions.csv, nothing is re-rendered. Record why in NOTEBOOK.md.
-exclude_videos: ["0103", "0104", "0105", "0301", "0302"]
+exclude_videos: ["0103", "0104", "0105", "0301", "0302", "0207", "0257", "0310", "0311", "0312"]
 
 preprocess:
   width: 768                         # downscale from 4K; the judge sees ~70 tokens per frame regardless

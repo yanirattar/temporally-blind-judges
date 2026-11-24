@@ -57,6 +57,11 @@ Irreversible scenes where I expect Gemini to **catch** it:
   ("suddenly jumping/appears", "out of thin air", "no continuous", "resets") and a false pause ("hang intact"
   matched "hang in"). Changes 7 of 400 pilot reasons, all to the right tag. Lists now frozen; the hand check
   of 50 main-run reasons measures them (see Failure review).
+- 2026-11-21 (after the runs, before reading results): excluded 0207, 0257, 0310, 0311, 0312. Their clean clips are
+  byte-identical to 0206, 0059, 0112, 0113, 0114: Physics-IQ publishes these recordings twice (match-blows-balloon take 2
+  = take 1 in all three views; duck-falls-in-box center take 2 = take 1; ball-hits-duck right take 2 = center take 2).
+  Found because call keys are clip bytes, so identical clips were asked once, leaving 19 conditions in main and 13 per 
+  setup without their own answer. Rule: one clip per recording, keep the lowest id. 212 clips, 2,756 conditions.
 
 ## Observations
 
@@ -323,6 +328,19 @@ close to it is inconclusive (not a reason to label more).
 4. **End-hold.** Count flagged strong drops at 4 fps whose reasons mention a stop at the end (see Limitations).
 5. **Mild drops.** If missed, check whether the reasons treat the jump as a glitch rather than physics (see Observations).
 
+
+## Results (2026-11-21; graded against the tests stated in HYPOTHESES.md)
+Measure where noted: detection − false alarms (2 × balanced accuracy − 1), because false alarms are 52% at default.
+- H1 wrong: full reversals 94% vs shuffles 95%; over all strengths reversals trail by 7 pts [3,12], freezes by 50. At 4 fps freezes stay far below reversals (+6/+17 vs +58): sampling explains only part.
+- H2 wrong: detection gains reversal +3 [0,+8], freeze +2 [−6,+10], drop −9 [−17,−3]. Freeze > drop holds: +12 [5,19].
+- H3 wrong: checklist false alarms −11 [−20,−2], detection −6 [−10,−2]. Explanation holds: 76% of its false alarms include a jump; at 4 fps they halve (41% → 20%).
+- H4 wrong on reversals (full 93 vs 94; ½ 43 vs 89), right on freezes/drops (forward clip 92–96%, "neither" 0%). False alarms 52% → 7%.
+- H5 wrong: +4 [−4,+12]; 68 of 212 clips are short.
+- H6 wrong: the full reversal is caught most (¼ −15 [−24,−6], ½ −6 [−14,+2]; dense ½ +4 [−1,+10]).
+- All six failed in one direction: the judge handles time direction better than predicted; its weaknesses are speed and false alarms.
+- Exploratory: telling about sampling cuts false alarms 22 pts (BA +0.06) but freeze/drop detection falls to the false-alarm rate; only 4 fps gives speed sensitivity (freeze strong +17, drops +11).
+- At 1 fps, freeze flags follow the clip's clean flag (68% vs 19%). Post hoc.
+
 ## Runs
 
 - **2026-11-18, smoke test:** failed on the free tier (gemini-3.8-flash allows 20 requests a day there; retries
@@ -365,3 +383,5 @@ close to it is inconclusive (not a reason to label more).
     gripping motion. Real misses, no limitation needed.
   - Reading the reasons led to the keyword fixes (see Decisions).
   - Go: the full sampling batch runs as planned.
+  - **2026-11-21, collected and analyzed:** 24 jobs, 0 failed; $14.21 total ($13.29 batch). After the duplicate exclusion:
+    212 clips, 10,990 answers, exactly 212 per condition and setup. Analysis rerun before opening the summary.
