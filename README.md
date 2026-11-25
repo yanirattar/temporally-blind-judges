@@ -4,7 +4,7 @@
 
 Video-generation benchmarks increasingly ask a vision-language model, often Gemini, whether a generated video is physically plausible. Many physical errors are errors in time: things happening in the wrong order, running backward, pausing or skipping. If the judge can't see time, its physics scores miss exactly those errors.
 
-This project takes real videos where physics is correct by definition (Google DeepMind's [Physics-IQ](https://github.com/google-deepmind/physics-IQ-benchmark)) and corrupts them in ways that break **only time**: every frame the judge sees is a real frame, only the order changes. Because each corruption is made on purpose, the correct verdict is known without human labels.
+This project takes real videos where physics is correct by definition (Google DeepMind's [Physics-IQ](https://github.com/google-deepmind/physics-IQ-benchmark)) and corrupts them in ways that break **only time**: every frame the judge sees is a real frame, only the order changes. Because each corruption is made on purpose, it is known exactly which clips were altered, how and where, without per-clip labels. Two things are checked by hand rather than assumed: that each scene is irreversible (its reversal looks impossible), and how many alterations are too small to see (a labelled sample, below).
 
 **Research questions**
 
@@ -38,7 +38,7 @@ Judge `gemini-3.8-flash` (static frame extraction, low media resolution, low thi
 | Freeze (medium / strong) | **−10** / −5 | +6 / **+17** | −1 / −3 | −12 / −8 | +2 / −2 |
 | Drop (medium / strong) | +2 / +6 | **+11** / **+11** | +1 / +2 | +3 / 0 | 0 / +1 |
 | *False alarms on clean clips* | *52%* | *35%* | *30%* | *41%* | *7%* |
-| *Balanced accuracy, all corruptions* | *0.59* | *0.67* | *0.66* | *0.62* | *0.64* |
+| *Balanced accuracy, medium and strong corruptions* | *0.60* | *0.67* | *0.66* | *0.62* | *0.64* |
 
 **Hypotheses** (committed in [`HYPOTHESES.md`](HYPOTHESES.md) before any judge call, each with a test stated in advance for when it is wrong)
 
