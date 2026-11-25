@@ -1,0 +1,13 @@
+setup,corruption,share_time_problem
+default,drop,0.24705882352941178
+default,freeze,0.15789473684210525
+default,reversal,0.59245960502693
+default,shuffle,0.6749585406301825
+dense,drop,0.2653061224489796
+dense,freeze,0.16161616161616163
+dense,reversal,0.5174129353233831
+dense,shuffle,0.7424242424242424
+sampling_aware,drop,0.07575757575757576
+sampling_aware,freeze,0.03389830508474576
+sampling_aware,reversal,0.5267175572519084
+sampling_aware,shuffle,0.6625916870415648
